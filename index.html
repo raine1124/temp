@@ -1,1 +1,218 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
+const RainDrop = ({ initialDelay = 0 }) => {
+  // Random position across the full width of the word (roughly 400px based on text-8xl)
+  const randomX = Math.random() * 160 - 80; // -80 to 80px range
+  const randomDuration = 1.5 + Math.random() * 1;
+
+  return (
+    <motion.div
+      className="absolute bg-white/30"
+      initial={{ 
+        opacity: 0.4,
+        y: 0,
+        x: randomX,
+        height: 12,
+        width: 2
+      }}
+      animate={{ 
+        opacity: 0,
+        y: 400,
+        height: 8,
+      }}
+      transition={{
+        duration: randomDuration,
+        delay: initialDelay,
+        ease: "easeIn"
+      }}
+    />
+  );
+};
+
+const RainDrops = ({ startDelay }) => {
+  const [rainInstances, setRainInstances] = useState([0]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRainInstances(prev => [...prev, prev.length]);
+    }, 500);
+
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, []);
+
+  return (
+    <>
+      {rainInstances.map((instance) => (
+        <div key={instance}>
+          {[...Array(6)].map((_, i) => (
+            <RainDrop 
+              key={`${instance}-${i}`} 
+              initialDelay={startDelay + (i * 0.15)}
+            />
+          ))}
+        </div>
+      ))}
+    </>
+  );
+};
+
+const TitleLetter = ({ letter, index, allLettersVisible }) => {
+  const letterDelay = index * 0.5;
+  
+  return (
+    <div className="relative">
+      <motion.span
+        className="inline-block text-8xl font-bold text-white relative"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: letterDelay }}
+        style={{ fontFamily: 'YourCustomFont, sans-serif' }}
+      >
+        {letter}
+        
+        {allLettersVisible && (
+          <div className="absolute left-1/2 -translate-x-1/2 top-full">
+            <RainDrops startDelay={0} />
+          </div>
+        )}
+      </motion.span>
+    </div>
+  );
+};
+
+const SubTextLetter = ({ letter, index, delay = 0 }) => (
+  <motion.span
+    className="inline-block text-2xl text-white"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.3, delay: delay + (index * 0.1) }}
+    style={{ fontFamily: 'YourCustomFont, sans-serif' }}
+  >
+    {letter}
+  </motion.span>
+);
+
+const LandingPage = () => {
+  const [allLettersVisible, setAllLettersVisible] = useState(false);
+  const [titleComplete, setTitleComplete] = useState(false);
+  const [firstLineComplete, setFirstLineComplete] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [email, setEmail] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAllLettersVisible(true);
+      setTimeout(() => setTitleComplete(true), 800);
+    }, 2.5 * 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (titleComplete) {
+      setTimeout(() => setFirstLineComplete(true), 2000);
+    }
+  }, [titleComplete]);
+
+  useEffect(() => {
+    if (firstLineComplete) {
+      setTimeout(() => setShowForm(true), 1500);
+    }
+  }, [firstLineComplete]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Email submitted:', email);
+    setEmail('');
+  };
+
+  return (
+    <div className="min-h-screen bg-black flex flex-col items-center justify-between p-4 overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center">
+        {/* Title */}
+        <div className="text-center mb-36">
+          <div className="flex gap-4 justify-center">
+            {'RAINE'.split('').map((letter, index) => (
+              <TitleLetter
+                key={index}
+                letter={letter}
+                index={index}
+                allLettersVisible={allLettersVisible}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="space-y-12">
+          {titleComplete && (
+            <div className="flex gap-1 justify-center">
+              {'you are early'.split('').map((letter, index) => (
+                <SubTextLetter
+                  key={index}
+                  letter={letter}
+                  index={index}
+                  delay={0}
+                />
+              ))}
+            </div>
+          )}
+          
+          {titleComplete && (
+            <div className="flex gap-1 justify-center">
+              {'sign up for exclusive updates'.split('').map((letter, index) => (
+                <SubTextLetter
+                  key={index}
+                  letter={letter}
+                  index={index}
+                  delay={1}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Form */}
+      {showForm && (
+        <motion.div 
+          className="w-full max-w-md mt-16"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+        >
+          <form 
+            onSubmit={handleSubmit}
+            className="flex gap-4"
+          >
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="email"
+              required
+              className="flex-1 px-4 py-3 rounded-none border border-white/20 bg-transparent text-white placeholder-gray-500 focus:outline-none focus:border-white transition-colors text-center"
+              style={{ fontFamily: 'YourCustomFont, sans-serif' }}
+            />
+            <button
+              type="submit"
+              className="px-8 py-3 bg-transparent border border-white/20 rounded-none text-white font-light hover:border-white transition-colors uppercase tracking-wider"
+              style={{ fontFamily: 'YourCustomFont, sans-serif' }}
+            >
+              join
+            </button>
+          </form>
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+export default LandingPage;
